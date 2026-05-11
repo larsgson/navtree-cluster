@@ -1,0 +1,10 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import ReviewDashboard from "../components/ReviewDashboard"
+
+const clientId = import.meta.env.PUBLIC_GITHUB_CLIENT_ID ?? ""
+---
+
+<BaseLayout title="Review">
+  <ReviewDashboard client:load clientId={clientId} />
+</BaseLayout>

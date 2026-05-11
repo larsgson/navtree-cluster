@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.netlify/
+.DS_Store
+/.claude
+/example
+.env
+.env.*
+/content/
+/data/

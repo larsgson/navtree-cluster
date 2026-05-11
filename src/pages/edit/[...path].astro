@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"
+import PageEditor from "../../components/PageEditor"
+import { loadTree, allNodes, type TreeNode } from "../../lib/tree"
+
+export async function getStaticPaths() {
+  const root = loadTree()
+  const paths = allNodes(root).flatMap((node) => {
+    const editPath = {
+      params: {
+        path: node.segments.length ? node.segments.join("/") : undefined,
+      },
+      props: { mode: "edit" as const, nodeUrl: node.url },
+    }
+    // Also generate a /new child route for each node
+    const newPath = {
+      params: {
+        path: (node.segments.length
+          ? node.segments.join("/") + "/"
+          : "") + "_new",
+      },
+      props: { mode: "create" as const, nodeUrl: node.url },
+    }
+    return [editPath, newPath]
+  })
+  return paths
+}
+
+const props = Astro.props as
+  | { mode: "edit"; nodeUrl: string }
+  | { mode: "create"; nodeUrl: string }
+
+const root = loadTree()
+const all = allNodes(root)
+const target = all.find((n) => n.url === props.nodeUrl) as TreeNode
+
+const clientId = import.meta.env.PUBLIC_GITHUB_CLIENT_ID ?? ""
+
+const editorProps =
+  props.mode === "edit"
+    ? {
+        mode: "edit" as const,
+        parentPath: target.segments.slice(0, -1),
+        initialSlug: target.slug,
+        initialTitle: target.title,
+        initialBody: target.body,
+        parentUrl: target.parent?.url ?? "/",
+        nodeUrl: target.url,
+        clientId,
+      }
+    : {
+        mode: "create" as const,
+        parentPath: target.segments,
+        initialSlug: "",
+        initialTitle: "",
+        initialBody: "# New page\n\n",
+        parentUrl: target.url,
+        nodeUrl: target.url,
+        clientId,
+      }
+---
+
+<BaseLayout title={props.mode === "edit" ? `Editing ${target.title}` : `New page under ${target.title}`}>
+  <PageEditor client:load {...editorProps} />
+</BaseLayout>

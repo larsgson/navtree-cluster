@@ -1,0 +1,67 @@
+---
+import "../styles/global.css"
+
+interface Props {
+  title?: string
+}
+
+const { title = "Navtree CMS" } = Astro.props
+const clientId = import.meta.env.PUBLIC_GITHUB_CLIENT_ID ?? ""
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen flex flex-col bg-white">
+    <header
+      class="bg-primary text-white h-14 flex items-center px-4 sticky top-0 z-50 gap-4"
+    >
+      <button
+        id="sidebar-toggle"
+        class="md:hidden text-white"
+        aria-label="Toggle navigation"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path>
+        </svg>
+      </button>
+      <a href="/" class="text-lg font-semibold hover:opacity-90 flex-1"
+        >Navtree CMS</a
+      >
+      <div id="header-user-slot" data-client-id={clientId}></div>
+    </header>
+    <slot />
+
+    <script>
+      import { initAuthHeader } from "../lib/auth-client"
+      initAuthHeader()
+      document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
+        document.body.classList.toggle("sidebar-open")
+      })
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  body.sidebar-open .sidebar-root {
+    transform: translateX(0);
+  }
+  @media (max-width: 767px) {
+    .sidebar-root {
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      position: fixed;
+      top: 3.5rem;
+      bottom: 0;
+      left: 0;
+      z-index: 40;
+      background: white;
+      width: 280px;
+      box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+</style>

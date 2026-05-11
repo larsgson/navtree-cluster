@@ -1,0 +1,34 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import Sidebar from "../components/Sidebar"
+import Breadcrumbs from "../components/Breadcrumbs.astro"
+import PrevNext from "../components/PrevNext.astro"
+import { loadTree, allNodes, serialize, type TreeNode } from "../lib/tree"
+import { renderMarkdown } from "../lib/markdown"
+
+export async function getStaticPaths() {
+  const root = loadTree()
+  return allNodes(root).map((node) => ({
+    params: { path: node.segments.length ? node.segments.join("/") : undefined },
+    props: { nodeUrl: node.url },
+  }))
+}
+
+const { nodeUrl } = Astro.props as { nodeUrl: string }
+const root = loadTree()
+const all = allNodes(root)
+const node = all.find((n) => n.url === nodeUrl) as TreeNode
+const html = renderMarkdown(node.body)
+const treeData = serialize(root)
+---
+
+<BaseLayout title={node.title}>
+  <div class="flex flex-1">
+    <Sidebar client:load tree={treeData} currentUrl={node.url} />
+    <main class="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
+      <Breadcrumbs node={node} />
+      <article class="prose-content" set:html={html} />
+      <PrevNext root={root} node={node} />
+    </main>
+  </div>
+</BaseLayout>

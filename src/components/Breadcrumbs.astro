@@ -1,0 +1,29 @@
+---
+import type { TreeNode } from "../lib/tree"
+import { breadcrumbs } from "../lib/tree"
+
+interface Props {
+  node: TreeNode
+}
+const { node } = Astro.props
+const chain = breadcrumbs(node)
+---
+
+{
+  chain.length > 1 && (
+    <nav class="text-sm text-gray-500 mb-4">
+      {chain.map((n, i) => (
+        <span>
+          {i > 0 && <span class="mx-1">›</span>}
+          {i === chain.length - 1 ? (
+            <span class="text-gray-800">{n.title || "Home"}</span>
+          ) : (
+            <a href={n.url} class="hover:text-primary hover:underline">
+              {n.title || "Home"}
+            </a>
+          )}
+        </span>
+      ))}
+    </nav>
+  )
+}
