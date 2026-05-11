@@ -20,10 +20,19 @@ import { spawn } from "node:child_process"
 
 const source = process.env.CONTENT_SOURCE
 if (!source) {
-  console.log(
-    "[fetch-content] CONTENT_SOURCE unset — using local content/ folder.",
+  if (fs.existsSync("content")) {
+    console.log(
+      "[fetch-content] CONTENT_SOURCE unset — using local content/ folder.",
+    )
+    process.exit(0)
+  }
+  console.error(
+    "[fetch-content] No local content/ folder, and CONTENT_SOURCE is unset.\n" +
+      "  Either:\n" +
+      "    - Set CONTENT_SOURCE=owner/repo[@ref] to fetch content from another repo (mode B), or\n" +
+      "    - Commit a content/ folder to this repo (mode A).",
   )
-  process.exit(0)
+  process.exit(1)
 }
 
 const m = /^([^/\s]+)\/([^@\s]+)(?:@(.+))?$/.exec(source.trim())

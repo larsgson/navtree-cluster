@@ -4,8 +4,8 @@ import {
   verifyUser,
   installationToken,
   ghJson,
-  fromBase64,
   repoCoords,
+  assertReviewer,
 } from "./_github.js"
 
 export default async (request) => {
@@ -35,18 +35,10 @@ export default async (request) => {
     return json({ error: e.message }, 500)
   }
 
-  // Reviewer check
   try {
-    const r = await ghJson(
-      appToken,
-      `/repos/${owner}/${repo}/contents/data/reviewers.json?ref=main`,
-    )
-    const reviewers = JSON.parse(fromBase64(r.content)).reviewers || []
-    if (!reviewers.includes(user.login)) {
-      return json({ error: "not a reviewer" }, 403)
-    }
+    await assertReviewer(appToken, user.login)
   } catch (e) {
-    return json({ error: `reviewer list unavailable: ${e.message}` }, 500)
+    return json({ error: e.message }, e.status || 500)
   }
 
   // List PRs

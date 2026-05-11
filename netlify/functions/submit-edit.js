@@ -13,6 +13,7 @@ import {
   parseFrontmatter,
   isSafeSlug,
   isSafePathSegments,
+  loadTrusted,
 } from "./_github.js"
 
 export default async (request) => {
@@ -179,7 +180,7 @@ export default async (request) => {
   // --- 6. If user is trusted, enable auto-merge (best-effort)
   let autoMerge = false
   try {
-    const trusted = await loadTrustedSet(appToken, owner, repo)
+    const trusted = await loadTrusted(appToken)
     if (trusted.has(user.login)) {
       await enableAutoMerge(appToken, pr.node_id)
       autoMerge = true
@@ -197,19 +198,6 @@ export default async (request) => {
 }
 
 export const config = { path: "/api/submit-edit" }
-
-async function loadTrustedSet(appToken, owner, repo) {
-  try {
-    const data = await ghJson(
-      appToken,
-      `/repos/${owner}/${repo}/contents/data/trusted-contributors.json?ref=main`,
-    )
-    const content = JSON.parse(fromBase64(data.content))
-    return new Set(content.trusted || [])
-  } catch {
-    return new Set()
-  }
-}
 
 async function enableAutoMerge(appToken, prNodeId) {
   const query = `mutation($id: ID!) {

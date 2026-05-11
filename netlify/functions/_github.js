@@ -13,14 +13,24 @@ export const json = (body, status = 200) =>
   })
 
 export function repoCoords() {
-  // Coordinates of the *content* repo (where _index.md files live, where
-  // PRs are opened, where trusted/reviewers JSON files are read). In the
-  // one-repo deployment (mode A) this is the same repo as the client app.
-  // In the multi-site deployment (mode B) it is a separate content repo
-  // per site, while the client app remains a single shared codebase.
+  // Coordinates of the *content* repo: where _index.md files live and where
+  // PRs are opened. In a one-repo deployment (mode A) this is the same repo
+  // as the client app. In a multi-site deployment (mode B) it is a separate
+  // content repo per site.
   return {
     owner: getEnv("CONTENT_REPO_OWNER"),
     repo: getEnv("CONTENT_REPO_NAME"),
+  }
+}
+
+export function configRepoCoords() {
+  // Coordinates of the *config* repo: where `data/trusted-contributors.json`
+  // and `data/reviewers.json` live. Defaults to the content repo if
+  // CONFIG_REPO_* env vars are unset (test setup). Set them to a private
+  // repo to keep the editor roster out of public view.
+  return {
+    owner: getEnv("CONFIG_REPO_OWNER") || getEnv("CONTENT_REPO_OWNER"),
+    repo: getEnv("CONFIG_REPO_NAME") || getEnv("CONTENT_REPO_NAME"),
   }
 }
 
@@ -79,6 +89,48 @@ export async function ghJson(token, pathOrUrl, init) {
     throw Object.assign(new Error(msg), { status: r.status, body: data })
   }
   return data
+}
+
+// Reviewer / trusted list helpers — read from the config repo (which may be
+// the same as the content repo for the test setup, or a separate private
+// repo for production).
+
+export async function loadReviewers(appToken) {
+  const { owner, repo } = configRepoCoords()
+  if (!owner || !repo) throw new Error("config repo not configured")
+  const r = await ghJson(
+    appToken,
+    `/repos/${owner}/${repo}/contents/data/reviewers.json?ref=main`,
+  )
+  return new Set(JSON.parse(fromBase64(r.content)).reviewers || [])
+}
+
+export async function loadTrusted(appToken) {
+  const { owner, repo } = configRepoCoords()
+  if (!owner || !repo) return new Set()
+  try {
+    const r = await ghJson(
+      appToken,
+      `/repos/${owner}/${repo}/contents/data/trusted-contributors.json?ref=main`,
+    )
+    return new Set(JSON.parse(fromBase64(r.content)).trusted || [])
+  } catch {
+    return new Set()
+  }
+}
+
+export async function assertReviewer(appToken, login) {
+  let reviewers
+  try {
+    reviewers = await loadReviewers(appToken)
+  } catch (e) {
+    throw Object.assign(new Error(`reviewer list unavailable: ${e.message}`), {
+      status: 500,
+    })
+  }
+  if (!reviewers.has(login)) {
+    throw Object.assign(new Error("not a reviewer"), { status: 403 })
+  }
 }
 
 // Base64 helpers
