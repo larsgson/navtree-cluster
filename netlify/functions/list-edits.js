@@ -10,6 +10,12 @@ import {
 
 export default async (request) => {
   console.log("[list-edits]", request.method, request.url)
+  console.log("[list-edits env]", {
+    CONFIG_REPO_OWNER: process.env.CONFIG_REPO_OWNER,
+    CONFIG_REPO_NAME: process.env.CONFIG_REPO_NAME,
+    CONTENT_REPO_OWNER: process.env.CONTENT_REPO_OWNER,
+    CONTENT_REPO_NAME: process.env.CONTENT_REPO_NAME,
+  })
   if (request.method !== "POST") return json({ error: "method not allowed" }, 405)
 
   let userToken
