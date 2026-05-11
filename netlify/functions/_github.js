@@ -98,18 +98,11 @@ export async function ghJson(token, pathOrUrl, init) {
 export async function loadReviewers(appToken) {
   const { owner, repo } = configRepoCoords()
   if (!owner || !repo) throw new Error("config repo not configured")
-  try {
-    const r = await ghJson(
-      appToken,
-      `/repos/${owner}/${repo}/contents/data/reviewers.json?ref=main`,
-    )
-    return new Set(JSON.parse(fromBase64(r.content)).reviewers || [])
-  } catch (e) {
-    throw new Error(
-      `${e.message} (repo=${owner}/${repo}, path=data/reviewers.json) — ` +
-        `check that the GitHub App is installed on ${owner}/${repo}`,
-    )
-  }
+  const r = await ghJson(
+    appToken,
+    `/repos/${owner}/${repo}/contents/data/reviewers.json?ref=main`,
+  )
+  return new Set(JSON.parse(fromBase64(r.content)).reviewers || [])
 }
 
 export async function loadTrusted(appToken) {
