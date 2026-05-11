@@ -9,6 +9,7 @@ import {
 } from "./_github.js"
 
 export default async (request) => {
+  console.log("[list-edits]", request.method, request.url)
   if (request.method !== "POST") return json({ error: "method not allowed" }, 405)
 
   let userToken
